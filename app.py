@@ -12,20 +12,23 @@ st.set_page_config(
 
 # OpenAI Credentials
 with st.sidebar:
-    st.title("OpenAI Chatbot")
-    if 'OPENAI_API_KEY' in st.secrets:
-        st.success('API key already provided!', icon = '✅')
-        api_key = st.secrets['OPENAI_API_KEY']
+    api_key = st.text_input('Enter your OpenAI API token:', type = 'password')
+    if not (api_key.startswith('sk-') and len(api_key) == 51):
+        st.warning('Please enter your credentials!', icon = '⚠️')
     else:
-        api_key = st.text_input('Enter your OpenAI API token:', type = 'password')
-        if not (api_key.startswith('sk-') and len(api_key) == 51):
-            st.warning('Please enter your credentials!', icon = '⚠️')
-        else:
-            st.success("Proceed to entering your prompt message!", icon = '😊')
-    os.environ['OPENAI_API_KEY'] = api_key
+        st.success("Proceed to entering your prompt message!", icon = '✅')
+    # os.environ['OPENAI_API_KEY'] = api_key
 
     st.subheader('Models and parameters')
-    selected_model = st.sidebar.selectbox('Choose a model', ['1', '2'], key = 'selected_model')
+
+    selected_model = st.sidebar.selectbox(
+        ':blue[Choose a model]',
+        ['gpt-3.5-turbo', 'davinci'], 
+        index = None, 
+        key = 'selected_model', 
+        placeholder='select a model', 
+        help = "A set of models that improve on GPT-3 and can understand as well as generate natural language or code")
+    
     if selected_model == 'davinci':
         model_function = ''
     elif selected_model == 'gpt-turbo-3.5':
