@@ -1,11 +1,10 @@
 import streamlit as st
 import os
 
-
 # App title
 st.set_page_config(
     page_title = "Chatbot", 
-    page_icon = "c", layout = "wide", 
+    page_icon = "D:\chatbot\openai-white-logomark.svg" , layout = "wide", 
     initial_sidebar_state = "auto", 
     menu_items = None
 )
@@ -19,22 +18,24 @@ with st.sidebar:
         st.success("Proceed to entering your prompt message!", icon = '✅')
     # os.environ['OPENAI_API_KEY'] = api_key
 
-    st.subheader('Models and parameters')
+    st.subheader('Models and Parameters')
 
     selected_model = st.sidebar.selectbox(
-        ':blue[Choose a model]',
-        ['gpt-3.5-turbo', 'davinci'], 
+        ':blue[Choose a Model]',
+        ['gpt-3.5-turbo', 'gpt-3.5-turbo-1106', 'text-davinci-002'], 
         index = None, 
         key = 'selected_model', 
         placeholder='select a model', 
-        help = "A set of models that improve on GPT-3 and can understand as well as generate natural language or code")
+        help = "A set of models that improve on GPT-3 and can understand as well as generate natural language or code"
+        )
+
+    temperature = st.sidebar.slider(':blue[Temperature]', min_value=0.0, max_value=2.0, value = 0.0, step = 0.01, help = 'Controls the randomness of the model\'s output.')
     
-    if selected_model == 'davinci':
-        model_function = ''
-    elif selected_model == 'gpt-turbo-3.5':
-        model_function = ''
-    temperature = st.sidebar.slider('temperature', min_value=0.0, max_value=2.0, value = 0.0, step = 0.01)
-    max_length = st.sidebar.slider('max_length', min_value=32, max_value=128, value=120, step=8)
+    max_length = st.sidebar.slider(':blue[Maximum Length]', min_value=32, max_value=128, value=120, step=8, help = 'Controls the maximum length of the model\'s response.')
+
+    independent_completions = st.sidebar.text_input(":blue[Independent Completions]", value=1, help = 'Number of independent completions to generate from the same prompt.')
+
+    stream = st.sidebar.checkbox(label='Stream Output', help = 'Return partial results as they become available, instead of waiting until the computation is done.')
 
 # Store LLM generated responses
 if "message" not in st.session_state.keys():
@@ -57,16 +58,36 @@ def clear_chat_history():
 st.sidebar.button('Clear Chat History', on_click = clear_chat_history)
 
 # function for generating responses
-def generate_response(message):
+def generate_response_gpt_turbo(message):
     import openai
     prompt = f'Conversation with a chatbot\n\nHuman: {message}\nAI:'
-    response = openai.chat.completions.create(
-        model = "gpt-3.5-turbo",
+    chat_response = openai.chat.completions.create(
+        model = selected_model,
         messages = [{"role": "user",
                      "content": prompt}],
         temperature = temperature,
+        stream = True
     )
-    return response.choices[0].message.content
+    response = ""
+    for part in chat_response:
+        response += part.choices[0].delta.content or ""
+    return response
+
+def generate_response_davinci(message):
+    import openai
+    completion = openai.completions.create(
+    model=selected_model,
+    prompt = prompt,
+    max_tokens=500
+    # stream=True
+    # )
+    # response = ""
+    # for part in completion:
+    #     response += part.choices[0].text or ""
+    # return response
+    )
+
+    return completion.choices[0].text
 
 # user-provided prompt message
 if prompt := st.chat_input(disabled = not api_key):
@@ -81,7 +102,10 @@ if prompt := st.chat_input(disabled = not api_key):
 if st.session_state.messages[-1]["role"] != "assistant":
     with st.chat_message('assistant'):
         with st.spinner("Thinking..."):
-            response = generate_response(prompt)
+            if selected_model[0] == 'g':
+                response = generate_response_gpt_turbo(prompt)
+            elif selected_model[0] == 't':
+                response = generate_response_davinci(prompt)
             placeholder = st.empty()
             full_response = ''
             for item in response:
