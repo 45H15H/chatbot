@@ -62,6 +62,7 @@ st.sidebar.button('Clear Chat History', on_click = clear_chat_history)
 # function for generating responses
 def generate_response_gpt_turbo(message):
     import openai
+    openai.api_key = api_key
     prompt = f'Conversation with a chatbot\n\nHuman: {message}\nAI:'
     chat_response = openai.chat.completions.create(
         model = selected_model,
@@ -83,6 +84,7 @@ def generate_response_gpt_turbo(message):
 
 def generate_response_davinci(message):
     import openai
+    openai.api_key = api_key
     completion = openai.completions.create(
         model=selected_model,
         prompt = prompt,
