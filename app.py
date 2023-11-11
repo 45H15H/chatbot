@@ -30,6 +30,9 @@ with st.sidebar:
         placeholder='select a model', 
         help = "A set of models that improve on GPT-3 and can understand as well as generate natural language or code",
         disabled=not api_key)
+    
+    if api_key and not selected_model:
+        st.warning("Please select a model.")
 
     temperature = st.sidebar.slider(':blue[Temperature]', min_value=0.0, max_value=2.0, value = 0.0, step = 0.01, help = 'Controls the randomness of the model\'s output.', disabled=not api_key)
     
@@ -37,7 +40,7 @@ with st.sidebar:
 
     # independent_completions = st.sidebar.number_input(":blue[Independent Completions]", value=1, help = 'Number of independent completions to generate from the same prompt.', disabled=not api_key)
 
-    stream = st.sidebar.toggle(label=':blue[Stream Output]', help = 'Return partial results as they become available, instead of waiting until the computation is done.', disabled=not api_key)
+    stream = st.sidebar.toggle(label=':blue[Stream Output]', help = '(simulation) Return partial results as they become available, instead of waiting until the computation is done.', disabled=not api_key)
 
 # Store LLM generated responses
 if "message" not in st.session_state.keys():
@@ -113,14 +116,21 @@ if st.session_state.messages[-1]["role"] != "assistant":
     with st.chat_message('assistant'):
         with st.spinner("Thinking..."):
             if selected_model[0] == 'g':
-                response = generate_response_gpt_turbo(prompt)
+                assistant_response = generate_response_gpt_turbo(prompt)
             elif selected_model[0] == 't':
-                response = generate_response_davinci(prompt)
+                assistant_response = generate_response_davinci(prompt)
             placeholder = st.empty()
             full_response = ''
-            for item in response:
-                full_response += item
-                placeholder.markdown(full_response)
+            if stream:
+                # Simulate stream of response with milliseconds delay
+                for item in assistant_response.split():
+                    full_response += item + " "
+                    time.sleep(0.05)
+                    # Blinking cursor to simulate typing
+                    placeholder.markdown(full_response + "| ")
+            else:
+                for item in assistant_response:
+                    full_response  += item
             placeholder.markdown(full_response)
 
     message = {
